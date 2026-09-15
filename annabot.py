@@ -4,24 +4,21 @@ import discord
 from discord.ext import commands
 import asyncio
 import config
+from pathlib import Path
 
 # ==================== EINSTELLUNGEN ====================
-# 1. Trage hier deine kopierte Discord-Benutzer-ID ein (Zahl ohne Anführungszeichen)
 DEINE_DISCORD_ID = config.DEINE_DISCORD_ID
-
-# 2. Der Ordner auf dem Pi, in dem die Briefe landen sollen
-ARCHIV_ORDNER = config.ARCHIV_ORDNER
-
-# 3. Dein geheimer Bot-Token aus dem Developer Portal
+ARCHIV_ORDNER = Path(config.ARCHIV_ORDNER)
 BOT_TOKEN = config.BOT_TOKEN
 # =======================================================
+
 
 intents = discord.Intents.default()
 intents.message_content = True
 
 class AnnaBot(commands.Bot):
     def __init__(self):
-        super().__init__(command_prefix="!", intents=intents)
+        super().__init__(command_prefix="!", intents=intents) 
 
     async def setup_hook(self):
         # Registriert den Button persistent beim Start
@@ -42,18 +39,23 @@ async def speichere_pdf_aus_nachicht(message):
     if not pdf_anhaenge:
         return None
 
-    if not os.path.exists(ARCHIV_ORDNER):
-        os.makedirs(ARCHIV_ORDNER)
+# Ordner automatisch anlegen, falls er nicht existiert
+    ARCHIV_ORDNER.mkdir(parents=True, exist_ok=True)
 
     heute_str = datetime.now().strftime("%Y-%m-%d_%H%M%S")
     pdf_anhang = pdf_anhaenge[0]
     pdf_name = f"{heute_str}_Dokument.pdf"
-    finaler_speicherpfad = os.path.join(ARCHIV_ORDNER, pdf_name)
+    
+    # Pfad per pathlib verbinden (mit dem / Operator)
+    finaler_speicherpfad = ARCHIV_ORDNER / pdf_name
 
-    # Datei vom Discord-Server auf den Pi herunterladen
-    await pdf_anhang.save(finaler_speicherpfad)
-
-    return pdf_name
+    # Speichern mit Fehlerabfang
+    try:
+        await pdf_anhang.save(finaler_speicherpfad)
+        return pdf_name
+    except Exception as e:
+        print(f"Fehler beim Speichern der PDF: {e}")
+        return None
 
 
 # =======================================================
