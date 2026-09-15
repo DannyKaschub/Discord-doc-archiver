@@ -1,0 +1,6 @@
+# Vertrauliche Konfigurationsdateien
+config.py
+.env
+
+# Cache-Ordner von Python
+__pycache__/
